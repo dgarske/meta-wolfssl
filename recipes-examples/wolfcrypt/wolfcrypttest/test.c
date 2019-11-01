@@ -24,6 +24,9 @@
     #include <config.h>
 #endif
 
+#ifndef WOLFSSL_USER_SETTINGS
+    #include <wolfssl/options.h>
+#endif
 #include <wolfssl/wolfcrypt/settings.h>
 #include <wolfssl/version.h>
 
@@ -202,6 +205,10 @@
     #ifdef HAVE_CAVIUM_OCTEON_SYNC
         #include <wolfssl/wolfcrypt/port/cavium/cavium_octeon_sync.h>
     #endif
+#endif
+
+#ifdef USE_ST_CSE_HSM
+    #include <wolfssl/wolfcrypt/port/st/stm32_ehsm.h>
 #endif
 
 #ifdef _MSC_VER
@@ -413,6 +420,9 @@ int blob_test(void);
 #ifdef WOLF_CRYPTO_CB
 int cryptocb_test(void);
 #endif
+#ifdef USE_ST_CSE_HSM
+int stehsm_test(void);
+#endif
 #ifdef WOLFSSL_CERT_PIV
 int certpiv_test(void);
 #endif
@@ -542,8 +552,16 @@ int wolfcrypt_test(void* args)
 #endif
 
 #if !defined(NO_BIG_INT)
-    if (CheckCtcSettings() != 1)
+    if (CheckCtcSettings() != 1) {
+        printf("Sizeof mismatch (build) %x != (run) %x\n",
+            CTC_SETTINGS, CheckRunTimeSettings());
+        /* do not cause a fatal error here, since cross-compiling test.c
+         * may have missing config.h which would not have SIZEOF_LONG or
+         * SIZEOF_LONG_LONG defined */
+    #if 0
         return err_sys("Build vs runtime math mismatch\n", -1000);
+    #endif
+    }
 
 #if defined(USE_FAST_MATH) && \
 	(!defined(NO_RSA) || !defined(NO_DH) || defined(HAVE_ECC))
@@ -1137,6 +1155,13 @@ initDefaultName();
         return err_sys("crypto callback test failed!\n", ret);
     else
         test_pass("crypto callback test passed!\n");
+#endif
+
+#ifdef USE_ST_CSE_HSM
+    if ( (ret = stehsm_test()) != 0)
+        return err_sys("ST eHSM test failed!\n", ret);
+    else
+        test_pass("ST eHSM test passed!\n");
 #endif
 
 #ifdef WOLFSSL_CERT_PIV
@@ -11626,7 +11651,7 @@ int rsa_test(void)
 #if defined(HAVE_NTRU)
     RsaKey caKey;
 #endif
-#if !defined(WOLFSSL_RSA_PUBLIC_ONLY) || defined(WOLFSSL_MP_PUBLIC)
+#if !defined(WOLFSSL_RSA_PUBLIC_ONLY) || defined(WOLFSSL_PUBLIC_MP)
     word32 idx = 0;
     const char* inStr = "Everyone gets Friday off.";
     word32      inLen = (word32)XSTRLEN((char*)inStr);
@@ -11646,7 +11671,7 @@ int rsa_test(void)
     DecodedCert cert;
 #endif
 
-#if !defined(WOLFSSL_RSA_PUBLIC_ONLY) || defined(WOLFSSL_MP_PUBLIC)
+#if !defined(WOLFSSL_RSA_PUBLIC_ONLY) || defined(WOLFSSL_PUBLIC_MP)
     DECLARE_VAR_INIT(in, byte, inLen, inStr, HEAP_HINT);
     DECLARE_VAR(out, byte, RSA_TEST_BYTES, HEAP_HINT);
     DECLARE_VAR(plain, byte, RSA_TEST_BYTES, HEAP_HINT);
@@ -11841,7 +11866,7 @@ int rsa_test(void)
     }
     TEST_SLEEP();
 
-#elif defined(WOLFSSL_MP_PUBLIC)
+#elif defined(WOLFSSL_PUBLIC_MP)
     (void)outSz;
     (void)inLen;
     (void)res;
@@ -11885,7 +11910,7 @@ int rsa_test(void)
     }
 #endif
 
-#if !defined(WOLFSSL_RSA_PUBLIC_ONLY) || defined(WOLFSSL_MP_PUBLIC)
+#if !defined(WOLFSSL_RSA_PUBLIC_ONLY) || defined(WOLFSSL_PUBLIC_MP)
     idx = (word32)ret;
     XMEMSET(plain, 0, plainSz);
     do {
@@ -25450,6 +25475,33 @@ int cryptocb_test(void)
     return ret;
 }
 #endif /* WOLF_CRYPTO_CB */
+
+#ifdef USE_ST_CSE_HSM
+int stehsm_test(void)
+{
+    int ret;
+    const char* msg = "abc";
+    word32 msg_size = (word32)XSTRLEN(msg);
+    byte* digest_exp = (byte*)
+        "\xBA\x78\x16\xBF\x8F\x01\xCF\xEA\x41\x41\x40\xDE\x5D\xAE\x22"
+        "\x23\xB0\x03\x61\xA3\x96\x17\x7A\x9C\xB4\x10\xFF\x61\xF2\x00"
+        "\x15\xAD";
+    word32 digest_exp_sz = WC_SHA256_DIGEST_SIZE;
+
+    eHSM_init();
+
+    ret = eHSM_GetID();
+    printf("eHSM_GetID ret=%d\n", ret);
+
+    ret = eHSM_Get_Firmware_ID();
+    printf("eHSM_Get_Firmware_ID ret=%d\n", ret);
+
+    ret = eHSM_Hash(WC_HASH_TYPE_SHA256, (byte*)msg, msg_size, digest_exp, &digest_exp_sz);
+    printf("eHSM_Hash ret=%d\n", ret);
+
+    return 0;
+}
+#endif
 
 #ifdef WOLFSSL_CERT_PIV
 int certpiv_test(void)

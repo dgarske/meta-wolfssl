@@ -17,7 +17,7 @@ SRC_URI = "file://benchmark.c file://benchmark.h"
 S = "${WORKDIR}"
 
 do_compile() {
-    ${CC} ${CFLAGS} -DUSE_CERT_BUFFERS_2048 -DUSE_CERT_BUFFERS_256 -DUSE_FLAT_BENCHMARK_H -DBENCH_EMBEDDED -Wall -include wolfssl/options.h -o wolfcryptbenchmark ${WORKDIR}/benchmark.c -lwolfssl ${LDFLAGS}
+    ${CC} ${CFLAGS} -DUSE_CERT_BUFFERS_2048 -DUSE_CERT_BUFFERS_256 -DUSE_FLAT_BENCHMARK_H -DBENCH_EMBEDDED -Wall -o wolfcryptbenchmark ${WORKDIR}/benchmark.c -lwolfssl ${LDFLAGS}
 }
 
 do_install() {

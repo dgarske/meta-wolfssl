@@ -17,7 +17,7 @@ SRC_URI = "file://test.c file://test.h"
 S = "${WORKDIR}"
 
 do_compile() {
-    ${CC} ${CFLAGS} -DUSE_CERT_BUFFERS_2048 -DUSE_CERT_BUFFERS_256 -DUSE_FLAT_TEST_H -Wall -include wolfssl/options.h -o wolfcrypttest ${WORKDIR}/test.c -lwolfssl ${LDFLAGS}
+    ${CC} ${CFLAGS} -DUSE_CERT_BUFFERS_2048 -DUSE_CERT_BUFFERS_256 -DUSE_FLAT_TEST_H -DSIZE_OF_LONG_LONG=8 -Wall -o wolfcrypttest ${WORKDIR}/test.c -lwolfssl ${LDFLAGS}
 }
 
 do_install() {

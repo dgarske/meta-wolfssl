@@ -14,6 +14,11 @@ RPROVIDES_${PN} = "cyassl"
 PROVIDES += "wolfssl"
 RPROVIDES_${PN} = "wolfssl"
 
+#SRCBRANCH = "stm32_ehsm"
+#SRCREV = "${AUTOREV}"
+#SRC_URI = "git://git@github.com/dgarske/wolfssl.git;protocol=ssh;branch=${SRCBRANCH}"
+#SRC_URI = "git:///home/davidgarske/GitHub/wolfssl/;protocol=file;branch=${SRCBRANCH}"
+
 SRC_URI[md5sum] = "43bb8ed233a619edf959278a0e8e5437"
 SRC_URI[sha256sum] = "7aa4c8b9ac7eed76f0275abb13b4bd59a2e749211242cc6e364c3cdc9f3d959d"
 SRC_URI = "https://www.wolfssl.com/wolfssl-${PV}.zip"
